@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>d3.js - U.S. GDP</title>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link rel="stylesheet" href="styles.css">
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
+    <script src="https://d3js.org/d3.v5.js"></script>
+    <link rel="stylesheet" href="//rawgithub.com/Caged/d3-tip/master/examples/example-styles.css">
+  </head>
+    <body>
+      <div class='main'>
+        <div class='visholder'></div>
+      </div>
+    </body>
+    <script>
+      let url = 'https://raw.githubusercontent.com/freeCodeCamp/ProjectReferenceData/master/GDP-data.json'
+
+      const w = 700;
+      const h = 450;
+      const padding = 40;
+
+      const svg = d3.select(".visholder")
+          .append('div')
+          .attr('class','vis')
+          .append("svg")
+          .attr('width', w)
+          .attr('height', h)
+
+      const tooltip = d3.select('.vis')
+          .append('div')
+          .attr('id','tooltip')
+          .style('opacity',0)
+
+      const overlay = d3.select('.vis')
+          .append('div')
+          .attr('class','overlay')
+          .style("opacity",0)
+
+      const barWidth = 1.5;
+
+      // Request for the JSON 
+      req=new XMLHttpRequest();
+      req.open('GET',url);
+      req.send();
+      req.onload=function(){
+        json=JSON.parse(req.responseText);
+        let dataset = []
+        for (let i = 0; i < json.data.length; i++) {
+          dataset.push(json.data[i])
+        }
+
+        dataset.map(function(item) {
+          if (item[0].slice(5,7) <= 3) {
+            return item.splice(0,1,[parseInt(item[0].slice(0,4)),'Q1'])
+          }
+          else if (item[0].slice(5,7) <= 6) {
+            return item.splice(0,1,[parseInt(item[0].slice(0,4)),'Q2'])
+          }
+          else if  (item[0].slice(5,7) <= 9) {
+            return item.splice(0,1,[parseInt(item[0].slice(0,4)),'Q3'])
+          }
+          else if (item[0].slice(5,7) <= 12) {
+            return item.splice(0,1,[parseInt(item[0].slice(0,4)),'Q4'])
+          }
+        })
+
+        console.log(dataset[0][0])
+
+
+        
+        const yearMin = d3.min(dataset, (d) => d[0][0])
+        const yearMax = d3.max(dataset, (d) => d[0][0])
+        const gdpMin = d3.min(dataset, (d) => d[1])
+        const gdpMax = d3.max(dataset, (d) => d[1]) + 1935.3
+
+        console.log(yearMin, yearMax)
+
+        const xScale = d3.scaleLinear()
+          .domain([yearMin, yearMax])
+          .range([padding, w - padding])
+
+        const yScale = d3.scaleLinear()
+          .domain([0, gdpMax])
+          .range([h - padding, padding])
+      
+        // Adding the Bars
+        svg.selectAll('rect')
+          .data(dataset)
+          .enter()
+          .append('rect')
+          .attr('x', (d,i) => i*2.28+ padding)
+          .attr('y', (d) => h - .02 * d[1] - padding)
+          .attr('class','bar')
+          .attr('width', barWidth)
+          .attr('height', (d) => 0.02 * d[1])
+        // Transitions for Tooltips
+          .on('mouseover', function(d,i){
+            overlay.transition()
+              .duration(0)
+              .style('height', d + 'px')
+              .style('width', barWidth + 'px')
+              .style('opacity', .9)
+              .style('left', (i*barWidth) + 0 + 'px')
+              .style('top', h - d + 'px')
+              .style('transform', 'translateX(60px)');
+            tooltip.transition()
+              .duration(200)
+              .style('opacity', .9)
+              tooltip.html(d[0][0] + ' ' + d[0][1] + '<br/>' + '$' + d[1] + ' Billion')
+              .style('left',(i*barWidth) + 50 + 'px')
+              .style('top', h - 200 + 'px')
+              .style('transform', 'translateX(60px)')
+          })
+          .on('mouseout', function(d) {
+            tooltip.transition()
+              .duration(200)
+              .style('opacity', 0);
+            overlay.transition()
+              .duration(200)
+              .style('opacity',0)
+          })
+
+        // Axes Declaration
+        const xAxis = d3.axisBottom(xScale).tickFormat(d3.format("d"));
+        const yAxis = d3.axisLeft(yScale);  
+
+        // Add Axes to Visual
+        svg.append('g')
+          .attr('transform', 'translate(0,' + (h - padding) + ")")
+          .call(xAxis);
+        svg.append('g')
+          .call(yAxis)
+          .attr('transform','translate(' + (padding) + ',0)')
+          
+        // Adding the Title
+        svg.append('text')
+          .attr('x', w/2)
+          .attr('y', 0 + 20)
+          .attr('text-anchor', 'middle')
+          .attr('class','header')
+          .text('United States GDP')
+      }
+    </script>
+  </html>
