@@ -42,11 +42,6 @@
     fill:white;
 }
 
-.overlay {
-    position: absolute;
-    background: white;
-    pointer-events: none;
-}
 
 #tooltip {
     display: flex;
